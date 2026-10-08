@@ -1,0 +1,52 @@
+name: uptime
+
+# EMAK sistemleri dışarıdan izleme: her 5 dakikada herkese açık adresleri kontrol eder.
+# Bir adres 3 denemede (20 sn arayla) beklenen yanıtı vermezse çalıştırma BAŞARISIZ olur -> GitHub depo sahibine e-posta gönderir
+# (bilgisayar/internet tamamen kapalı olsa bile haber verir).
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+    inputs:
+      simulate_fail:
+        description: "Deneme: başarısızlık simüle et (e-posta bildirimini sınamak için)"
+        type: boolean
+        default: false
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Adresleri kontrol et
+        env:
+          SIMULATE: ${{ inputs.simulate_fail }}
+        run: |
+          fail=0
+          check() {
+            url="$1"; want="$2"; ok=0; code="-"
+            for i in 1 2 3; do
+              code=$(curl -s -o /dev/null -m 15 -w '%{http_code}' "$url" || true)
+              if [ "$code" = "$want" ]; then ok=1; break; fi
+              sleep 20
+            done
+            if [ "$ok" = 0 ]; then echo "::error title=ERİŞİLEMİYOR::$url beklenen $want, gelen $code"; fail=1; else echo "OK  $url ($code)"; fi
+          }
+          check https://emakbilisim.com.tr 200
+          check https://admin.emakbilisim.com.tr 200
+          check https://magaza-api.emakbilisim.com.tr/api/health 200
+          check https://api.emakbilisim.com.tr/api/mobile/auth/me 401
+          check https://panel.emakbilisim.keenetic.link/login 200
+          if [ "$SIMULATE" = "true" ]; then echo "::error title=DENEME::Simüle edilmiş başarısızlık (e-posta sınaması)"; fail=1; fi
+          exit $fail
+
+      - name: Zamanlanmış çalışmanın 60 gün işlemsizlikten kapanmasını engelle
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow enable uptime.yml --repo "$GITHUB_REPOSITORY"
