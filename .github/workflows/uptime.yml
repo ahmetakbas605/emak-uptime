@@ -41,7 +41,9 @@ jobs:
           check https://magaza-api.emakbilisim.com.tr/api/health 200
           check https://api.emakbilisim.com.tr/api/mobile/auth/me 401
           check https://panel.emakbilisim.keenetic.link/login 200
-          check https://mizan.emakbilisim.com.tr/giris 200
+          check https://mizan.emakbilisim.com/giris 200
+          check https://erp.emakbilisim.com/login 200
+          check https://ustaflow.emakbilisim.com/login 200
           if [ "$SIMULATE" = "true" ]; then echo "::error title=DENEME::Simüle edilmiş başarısızlık (e-posta sınaması)"; fail=1; fi
           exit $fail
 
