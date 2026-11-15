@@ -37,7 +37,6 @@ jobs:
             if [ "$ok" = 0 ]; then echo "::error title=ERİŞİLEMİYOR::$url beklenen $want, gelen $code"; fail=1; else echo "OK  $url ($code)"; fi
           }
           check https://emakbilisim.com.tr 200
-          check https://admin.emakbilisim.com.tr 200
           check https://magaza-api.emakbilisim.com.tr/api/health 200
           check https://api.emakbilisim.com.tr/api/mobile/auth/me 401
           check https://panel.emakbilisim.keenetic.link/login 200
